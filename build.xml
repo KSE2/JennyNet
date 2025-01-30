@@ -1,0 +1,138 @@
+<project name="jennynet" default="help">
+	<property name="src" value="./src" />
+	<property name="dist" value="./bin" />
+	<property name="lib" value="./lib" />
+	<property name="doc" value="./doc" />
+	<property name="apidoc" value="./doc/api" />
+	<property name="build" value="./build" />
+	
+	<property name="kryo" value="kryo-4.0.3.jar" />
+	<property name="objenesis" value="objenesis-3.4.jar" />
+	<property name="minlog" value="minlog-1.3.0.jar" />
+	<property name="reflectasm" value="reflectasm-1.11.5-all.jar" />
+	<property name="junit" value="junit-4.6.jar" />
+	
+	<property name="classpath" value="${lib}/${kryo};${lib}/${objenesis};${lib}/${reflectasm};${lib}/${minlog};${lib}/${junit}" />
+        <property name="fileset1" value="License.txt Readme.txt Changelog.txt FAQ.txt JennyNet-User-Manual.hjt JennyNet-Developer.hjt" />
+        <property name="fileset2" value="${kryo} ${objenesis} ${reflectasm} ${minlog}" />
+	<property name="ver" value="1-0-0" />
+	<property name="jar-ver" value="1.0.0" />
+	<property name="releasedate" value="30 Jan. 2025" />
+
+	<property name="jarfile-name" value="jennynet-${jar-ver}.jar" />
+	<property name="jarfile-all-name" value="jennynet-all-${jar-ver}.jar" />
+	<property name="srcfile-name" value="jennynet-src-${jar-ver}.zip" />
+	<property name="jarfile" value="${dist}/${jarfile-name}" />
+	<property name="jarfile-all" value="${dist}/${jarfile-all-name}" />
+	<property name="srcfile" value="${dist}/${srcfile-name}" />
+	<property name="appfile" value="${dist}/jenny-apps-${jar-ver}.jar" />
+	<property name="app2file" value="${dist}/jenny-apps2-${jar-ver}.jar" />
+
+<target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+</target>
+
+<target name="api" depends="init" description="create API Javadoc">
+<javadoc   classpath = "${classpath}"
+           defaultexcludes="yes"
+           destdir="${apidoc}"
+           author="true"
+           version="true"
+           windowtitle="JennyNet ${ver} API Documentation " >
+   <fileset dir="${src}">
+   	<exclude name = "**/TestUnit*.java"/>
+   	<exclude name = "org/kse/jennynet/test/*"/>
+   	<exclude name = "org/kse/jennynet/appl/*"/>
+   </fileset>
+   <bottom><![CDATA[<i>Copyright &#169; 2025 Wolfgang Keller. All Rights Reserved.</i>]]></bottom>
+   <Header><![CDATA[<b>JennyNet ${ver}</b>]]></Header>
+   <Doctitle><![CDATA[<h2>JennyNet Release ${ver}</h2><p>Release Date: ${releasedate}</p>]]></Doctitle>
+</javadoc>
+</target>
+
+<target name="jar" depends="init,clear-c,comp" description="create jar library">
+<jar destfile="${jarfile}">
+   <fileset dir="${build}" includes="org/kse/jennynet/**"
+            excludes="org/kse/jennynet/test/**,org/kse/jennynet/appl/**,**/Test*" />
+</jar>
+</target>
+
+<target name="jar-all" depends="init,clear-c,comp" description="create jar library">
+<jar destfile="${jarfile-all}">
+   <fileset dir="${build}" includes="org/kse/jennynet/**"
+            excludes="org/kse/jennynet/test/**,org/kse/jennynet/appl/**,**/Test*" />
+   <zipgroupfileset dir="${lib}" includes="${fileset2}" excludes=""/>
+</jar>
+</target>
+
+<target name="app" depends="init,clear-c,comp" description="create apps library">
+<jar destfile="${appfile}" manifest="MANIFEST-APPL-SERVER.MF">
+   <fileset dir="${build}" includes="org/kse/jennynet/**"
+            excludes="org/kse/jennynet/test/**,**/Test*" />
+   <zipgroupfileset dir="${lib}" includes="${fileset2}" excludes=""/>
+</jar>
+</target>
+
+<target name="app2" depends="init,clear-c,comp" description="create apps library">
+<jar destfile="${app2file}" manifest="MANIFEST-APPL-SERVER.MF">
+   <fileset dir="${build}" includes="org/kse/jennynet/**"
+            excludes="org/kse/jennynet/test/**,**/Test*" />
+</jar>
+</target>
+
+<target name="src" depends="init,clear-c,comp" description="create src library">
+<jar destfile="${srcfile}">
+   <fileset dir="${src}" includes="org/kse/jennynet/**"
+            excludes="org/kse/jennynet/test/**,org/kse/jennynet/appl/**" />
+</jar>
+</target>
+
+<target name="clear-c" description="remove class files from build area">
+<mkdir dir="${build}"/>
+<delete>
+   <fileset dir="${build}" includes="**/*.class"/>
+</delete>
+</target>
+
+<target name="comp" description="compile project">
+<javac srcdir="${src}"  destdir="${build}" includeantruntime="false"
+       classpath="${classpath}" />
+</target>
+
+<target name="dist" depends="jar,jar-all,src,api" description="create distribution files">
+<zip destfile="${dist}/JennyNet-dist-${ver}.zip">
+    <zipfileset dir="${doc}" includes="${fileset1}" prefix="jennynet/doc" />
+    <zipfileset dir="${apidoc}" prefix="jennynet/doc/api" />
+    <zipfileset dir="${lib}" prefix="jennynet/lib" />
+    <zipfileset dir="${dist}" includes="${jarfile-name} ${jarfile-all-name} ${srcfile-name}" prefix="jennynet/bin" />
+</zip>
+<checksum file="${dist}/JennyNet-dist-${ver}.zip"/>
+</target>
+
+<target name="test-appl" depends="jar" description="create test applications">
+<jar destfile="${dist}/refltest.jar" manifest="MANIFEST-RFT-SV1.MF" update="false">
+   <fileset dir="${build}" includes="org/kse/jennynet/appl/ReflectTest*.*" />
+   <zipfileset src="${jarfile}"/>
+</jar>
+<jar destfile="${dist}/sendserver_a.jar" manifest="MANIFEST-SND-SV1.MF" update="false">
+   <fileset dir="${build}" includes="org/kse/jennynet/appl/SendServerA*.*" />
+   <zipfileset src="${jarfile}"/>
+</jar>
+</target>
+
+
+<target name="help">
+	<echo>Targets:
+--------
+jar   - create library jar file
+src   - create library src file
+app   - create JennyNet test applications file
+app2  - create JennyNet applications w/o library
+api   - create API Javadoc (directory)
+dist  - create distribution package
+test-appl  - create testing applications
+clear-c    - remove class files from build area
+	</echo>
+</target>
+</project>

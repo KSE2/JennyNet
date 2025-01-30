@@ -1,0 +1,218 @@
+<Treepad version 2.7 UUID=ac72bd1ada74cf11e2a4aa6d0250a3a6>
+dt=Text
+<node>
+JennyNet-User-Manual
+0
+The longer version of the User Manual is available at https://github.com/KSE2/JennyNet/wiki/User-Manual
+
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+Introduction
+1
+= JennyNet Overview
+==  Introduction
+
+JennyNet is an object data and file transport layer written in Java and performed on a Java Virtual Machine. JennyNet eases the way in which Java objects and files can be transmitted over the Internet by Java applications in the context of client/server or peer-to-peer communication architectures. It uses IP-addresses and port numbers (so called socket addresses) to identify hosts and rests on the TCP/IP transport layer. As executor of proprietary protocols, it requires that the same software package, with some identical initialisations, is present on all involved communication ends. JennyNet is designed to work efficiently on multi-core computers and enables parallel processing of sending and receiving streams. Atomic communication units are objects (graphs of objects) of serialisable Java classes and files of the file-system. Communication is divided into channels which are described by the transport data-types and transmit-priority attributes. Each channel ensures that the sequence of posting objects or files is replicated at the remote end.
+
+==  Main Features
+
+--    two standard serialisation methods: a) Java Serialization framework, and b) Kryo serialisation; plus a void slot for custom serialisations.
+--    automated serialisation/de-serialisation of Java objects and object graphs of registered classes.
+--    event-driven communication of application and layer, optional polling service.
+--    comfortable "background" file transfers (won't affect object communication).
+--    highly reactive interface; does not block application when large or multiple objects or files are being transmitted.
+--    5 priority channels for object and file transmissions; sending actions are performed with priority attributes. This allows data to be instantly preferred to ongoing transmissions of a lower priority channel.
+--    data types SIGNAL, OBJECT and FILE constitute super-channels where objects are preferred to files and signals to objects.
+--    extra services like PING signals, ALIVE signaling and IDLE connection alarming.
+--    multi-threaded design optimises execution on multi-core machines and relieves applications from most blocking considerations.
+--    thread impact is 2-3 per connection, plus 2-4 on the static level.
+
+== Other Resources
+
+The longer version of the User Manual is available at https://github.com/KSE2/JennyNet/wiki/User-Manual
+
+==  Release and Requirements
+
+    JennyNet comes as a Java Library (.jar) and is offered as a module for enclosing applications (API), size of 150 KiB.
+    JennyNet can be used out-of-the-box (single package) using Java-serialisation.
+    JennyNet requires a Java Virtual Machine (JRE) of version 1.8 or higher.
+    JennyNet requires external software for the optional use of Kryo-serialisation.
+
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+Setup Strategies
+1
+== Standard Design Example including File-Transfers and Listeners
+
+// this example decides for listeners to receive events from servers and connections
+// we use the default for output-thread usage (global single)
+// we use the default serialisation method (0 = Java-serialisation)
+// we allow file-transfers and set a generic landing folder for incoming
+ConnectionParameters defaultPar = JennyNet.getDefaultParameters();
+defaultPar.setFileRootDir(new File("/home/hans/landing-files"));
+
+// we fix a parcel-size for our application and enhance the capacity of queues
+defaultPar.setTransmissonParcelSize(128000);
+defaultPar.setObjectQueueCapacity(500);
+
+// we activate ALIVE sending and IDLE-STATE checking (connection services)
+defaultPar.setAlivePeriod(120000);
+defaultPar.setIdleThreshold(1000);
+
+// we register two classes to be used for sending objects
+Serialization ser = JennyNet.getDefaultSerialisation(0);
+ser.registerClass(OurCommands.class);
+ser.registerClass(OurResults.class);
+
+// when creating a connection we add our connection-listener
+Client client = new Client();
+client.addListener(new OurConnectionListener());
+
+// when creating a server we add our server-listener
+// the server-listener then adds connection-listeners to incoming connections
+Server server = new Server(25000);
+server.addListener(new OurServerListener());
+
+== Example for Kryo-Serialisation, Special Output-Threads and Event Polling
+
+// we don't allow for file-transfers (do nothing)
+// we use the Kryo serialisation (method 1)
+JennyNet.setDefaultSerialisationMethod(1);
+
+// we opt for using individual output-threads for event dispatching
+ConnectionParameters defaultPar = JennyNet.getDefaultParameters();
+defaultPar.setDeliverThreadUsage(ThreadUsage.INDIVIDUAL);
+
+// we adjust CONFIRM-TIMEOUT and DELIVER-TOLERANCE
+defaultPar.setConfirmTimeout()(60000);
+defaultPar.setDeliverTolerance(30000);
+
+// we register two classes to be used for sending objects
+Serialization ser = JennyNet.getDefaultSerialisation(1);
+ser.registerClass(OurCommands.class);
+ser.registerClass(OurResults.class);
+
+// when creating a connection we wrap it into the poll-service
+// a user-thread then calls 'pollBay.take()' in a loop (rendering the next ConnectionEvent)
+Client client = new Client();
+ConnectionPollService pollBay = new ConnectionPollService(client);
+
+// when creating a server we set the signaling-method 'ACCEPT'
+// a user-thread then calls 'server.accept()' in a loop (rendering the next incoming ServerConnection)
+Server server = new Server(25000);
+server.setSignalMethod(ServerSignalMethod.ACCEPT);
+
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+Error Codes
+1
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+Closure
+2
+= Closure of Connections
+
+Connections going out of use, following the CONNECTED state, is either triggered by an application command (which is called the "regular" case) or an effect of an error condition as for instance a network failure. The causes of entering the CLOSED state of a connection are indicated in an argument of the corresponding ConnectionListener event (method 'closed()').
+
+== SHUTDOWN State
+
+Upon a regular close command the Connection enters the intermediary SHUTDOWN state. In this state any ongoing transmission orders are completed while no new orders can be given. This state is assumed on both sides of the connection, disregarding on which side it was commanded. Only after both sides have indicated that all their data is sent, both sides are leaving SHUTDOWN state to assume the regular CLOSED state (codes 0 to 3).
+
+== Codes for Closure and Shutdown Causes
+Methods: ConnectionListener.shutdown(), ConnectionListener.closed()
+
+   0	local close command
+   1	local server shutdown (server-connection)
+   2	remote connection closed (signal received)
+   3	remote server shutdown
+   4	irregular EOF or socket error
+   5	internal error (core-receive, core-send, input-proc)
+   6	network breakdown or remote protocol error
+   8	connection closing timeout ('wait for' methods)
+   9	ALIVE signal failure (signal timeout)
+  10	local hard closure
+  11	serialisation failure
+
+
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+File-Transfer
+2
+= Error Codes for File-Transfers
+These values appear in the context of a TransmissionEvent.
+Method: ConnectionListener.transmissionEventOccurred()
+
+= Related to Outgoing conditions
+
+101  :  Remote file assignment error (not prepared for file reception, 
+           space allocation or file-system error)
+
+103  :  Timeout on waiting for transmission CONFIRM from remote
+
+105  :  File transmission has been broken by local user.
+
+107  :  File transmission has been broken by remote user.
+
+109  :  Remote processing error (file-reception)
+
+111  :  Local processing error (file-sending)
+           Exception present.
+
+113  :  File transmission broken due to local closing of connection
+
+115  :  File transmission broken due to remote closing of connection
+
+= Related to Incoming conditions
+
+102  :  The destination of a transmitted file could not be realised.
+           Associated exception present if IO-error occurred.
+           The transmission root-directory may be undefined, 
+           a reserved file addressed, a path error or low free space occurred.
+
+104  :  Received FAIL signal for timeout on file-sending from remote.  
+
+106  :  File transmission has been broken by remote user.
+
+108  :  File transmission has been broken by local user.
+
+110  :  Local processing error (file-reception)
+          Exception present.
+
+112  :  Remote processing error (file-sending)
+
+114  :  File transmission broken due to local closing of connection.
+
+116  :  File transmission broken due to remote closing of connection.
+
+118  :  Data integrity error occurred in final CRC control of target
+
+
+
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+Object-Transfer
+2
+= Error Codes for Object-Transfers
+These values appear in the context of ConnectionListener events and operation-exceptions thrown.
+Method: ConnectionListener.objectAborted()
+
+= Related to Outgoing conditions
+
+201  :  Object sending has been broken by local user
+
+203  :  Object sending is broken by local error conditions
+
+205  :  Object sending is broken by a hard-closure
+
+207 :   Object de-serialisation failed at receiver (various causes)
+
+209 :   remote has no object reception
+
+
+<end node> 5P9i0s8y19Z

@@ -1,0 +1,15 @@
+Project JennyNet Network Layer
+Package-Version 1.0.0
+
+== Changes since 0.2.0
+
+Broad overhaul with modifications of basic methods and strategies.
+Interfaces have changed profoundly, new services are available.
+
+Development has been taken over by 
+Wolfgang Keller neolith@chiron.uberspace.de
+Hosting at GitHub: https://github.com/KSE2/JennyNet
+
+
+
+

@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: org.janeth.jennynet.appl.ReflectTest
+Class-Path: lib/asm-4.0.jar lib/jsonbeans-0.5.jar lib/kryo-2.22.jar lib/objenesis-1.2.jar lib/minlog-1.2.jar lib/reflectasm-1.07.jar lib/junit-4.6.jar
+Created-By: Jane Hunt
+
