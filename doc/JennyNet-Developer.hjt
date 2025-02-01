@@ -22,41 +22,45 @@ T-Objekte können sein: Transmissionssignale (system-eigen), Daten-Objekte und D
 Transmissionssignale können an die Übertragung von anderen Objekten gebunden sein, sodaß sie zeitlich erst im Anschluß an eine Objektübertragung auftreten.
 
 -- Einschränkungen
-Der Größe nach sind T-Objekte nach ihrer Art unterschiedlich limitiert. Transmissionssignale unterliegen einer internen Beschränkung. Für Daten- und Datei-Objekte können anwendungsspezifische Beschränkungen eingestellt werden. Eine Beschränkung für Daten-Objekte ist voreingestellt, für Datei-Objekte dagegen nicht.
+Der Größe nach sind T-Objekte nach ihrer Art unterschiedlich limitiert. Transmissionssignale unterliegen einer internen Beschränkung. Für Daten- und Datei-Objekte können anwendungsspezifische Beschränkungen eingestellt werden. Eine Beschränkung für Daten-Objekte ist voreingestellt (Maximum der Serialisierung), für Datei-Objekte dagegen nicht.
 
-Innere Referenzen einer registrierten Klasse müssen nach ihrem Typ auflösbar sein, d.h. sie gehören der Menge wohldefinierter (sequenzierbarer) Objekttypen an. Solche Referenzen werden stets individuell zum Sequenzierungszeitpunkt ausgewertet und in die Übertragung eines Datenobjekts integriert. Eine wiederhergestellte gemeinsame Referenz auf ein identisches Objekt in verschiedenen Übertragungsobjekten ist nicht vorgesehen.
+Objekt-Graphen
+Innere Referenzen einer registrierten Klasse müssen nach ihrem Typ auflösbar sein, d.h. sie gehören der Menge wohldefinierter (sequenzierbarer) Objekttypen an. Solche Referenzen werden stets individuell zum Sequenzierungszeitpunkt ausgewertet und in die Übertragung eines Datenobjekts integriert. Graphen von Objekten werden folgerichtig wiederhergestellt, wenn sie von einem einzelnen Ursprung ausgehen, der als Übertragungsobjekt dient. Die Wiederherstellung gemeinsamer Referenzen auf ein identisches Objekt in verschiedenen Übertragungsobjekten ist nicht vorgesehen.
 
 == Ordnungen
 Übertragungen und Ereignisse sind nach Accounts geordnet, die "Connection" genannt werden. Jede Connection hat einen ausgehenden und einen einkommenden Kanal. Sendekanäle können in Subkanäle aufgeteilt sein, die einer Prioritätsmarkierung eines Sendeauftrags entsprechen. Darüber hinaus besitzt die Schicht, die "Server" genannt wird, die Möglichkeit, schichtspezifische Ereignisse zur An- und Abmeldung von Accounts zu verarbeiten bzw. auszugeben. Die Abfolge der Transmissionsobjekte ist identisch auf Sender- und Empfängerseite auf der Ebene der Subkanäle (Prioritätsklassen), d.h. für jeden Subkanal.
 
 == Parallelität
-Eingehende und ausgehende Kanäle sowohl eines einzelnen wie auch verschiedener Accounts können parallel betrieben werden. In der Server-Schicht bestehen mehrere Accounts (Connections) nebeneinander. Jede Connection besitzt zwei Threads, nämlich Sende- und Empfangsthread. Es kann eingestellt werden, ob die Ausgabe (Ereignisse) empfangener Objekte durch den Empfangsthread oder durch einen separaten schichteigenen Thread erfolgt.
+Eingehende und ausgehende Kanäle sowohl eines einzelnen wie auch verschiedener Accounts können parallel betrieben werden. Ein Account besitzt jeweils einen Socket. In der Server-Schicht bestehen mehrere Accounts (Connections) nebeneinander, die einem einzelnen Server zugeordnet sind. Es können auch mehrere Server bestehen. Jede Connection besitzt mindestens zwei eigene Threads, nämlich Sende- und Empfangsthread. Es kann eingestellt werden, ob die Ausgabe von Ereignissen, die einen Account betreffen (z.B. empfangene Objekte) durch einen dritten, account-eigenen Thread (Ausgabethread) oder durch einen separaten schichteigenen Thread  (statisch) erfolgt.
+
+== Statische Threads
+Die JennyNet-Schicht unterteilt sich in die Client- und Server-Bereiche. (Es ist hier auch von "Clientschicht" und "Serverschicht" die Rede, da sie logisch verschiedenen Kommunikationsinstanzen zugeordnet sind. Beide Schichten können aber auch in einer einzigen Anwendung existieren.) Beide Bereiche besitzen jeweil zwei statische Threads, die der Kommunikation mit dem TCP-Netzwerk einerseits und der Benutzeranwendung andererseits dienen. Genauer sind diese ein Sendethread, der Sendeaufträge verschiedener Accounts sequenziell abarbeitet und ein Ausgabethread, der die Ereignisse, welche in den Accounts entstehen, sequenziell an die Anwendung ausgibt.
 
 == Gliederung
-T-Objekte werden zur Übertragung in T-Pakete aufgegliedert bzw. auf T-Pakete abgebildet. Diese Pakete sind die atomaren Übertragungeinheiten, ihre maximale Größe ist parametrisiert. 
-Welche Pakete vorrangig zur Übertragung anberaumt werden, wird durch ein Prioritätsmerkmal bestimmt (siehe Prioritätskanäle). Alleinstehende Transmissionssignale haben immer die höchste Priorität. Einzelne Signale können in Einheit mit einzelnen Datenpaketen übertragen werden und verlieren damit ihre klassentypische Prioritätsstellung.
+T-Objekte werden zur Übertragung in T-Pakete aufgegliedert bzw. auf T-Pakete abgebildet. Die resultierenden Pakete sind die atomaren Übertragungseinheiten, ihre maximale Größe ist in Connection-Parametern einstellbar. 
+Welche Pakete vorrangig zur Übertragung anberaumt werden, wird durch ein Prioritätsmerkmal (siehe Prioritätskanäle) sowie durch den Übetragungsdatentyp bestimmt. Alleinstehende Transmissionssignale haben immer die höchste Priorität. Einzelne Signale können im Verbund mit einzelnen Datenpaketen übertragen werden und verlieren damit ihre klassentypische Prioritätsstellung.
 
-Die Übertragung erfolgt auf der Schicht TCP; deshalb wird davon ausgegangen, dass die Abfolge von T-Paketen sowie die Korrektheit der Daten kein Problem darstellt.
+Die Übertragung erfolgt auf der Schicht TCP; deshalb wird davon ausgegangen, dass die Abfolge von T-Paketen sowie die Korrektheit der Daten bei der Übertragung kein Problem darstellt.
 
-Die Übertragung erfolgt in 3 Prioritätskanälen:
-Regular, Priority und File.
+Priorisiert wird zuerst der Übertragungsdatentyp. Die Typen sind: Signal, Daten, Datei. Die T-Pakete sind jeweils einem dieser Typen zugeordnet.
+Danach wird eine vom Benutzer gewählte Prioritätsstufe berücksichtigt. Es gibt 5 Prioritätsstufen: BOTTOM, LOW, NORMAL, HIGH und TOP. Die Default-Einstellung ist NORMAL.
 
-Folgende Objektmerkmale kommen zum Einsatz:
+Folgende Objektmerkmale kommen zum Einsatz (auch für Dateien):
 * Objekt-ID (Seriennummer, eindeutig je Verbindung)
-- Funktionsklasse: FILE, OBJECT, SIGNAL
-- Objekt-Pfad (optional)
+- Funktionsklasse: DATEI, DATEN, SIGNAL
+- Objekt-Pfad (für Dateien)
 - Serialisierungsmethode
 * Prioritätsmerkmal
 - Grösse des Serialisierungspuffers
 - Anzahl der Pakete
-- CRC32 über die Serialisierungsdaten
+- CRC32 über die Objektdaten (für Dateien)
 (*: diese Daten werden nicht extra übertragen, da sie bereits im Paketkopf enthalten sind)
 
 Folgende Paketmerkmale kommen zum Einsatz:
 - Packet-Typkennzeichen (feste 8-Byte-Folge)
 - Funktionsmerkmal (Signal, Daten, Datei)
-- Prioritätsmerkmal
-- Objekt-ID
+- Prioritätsmerkmal (5 Prioritäts-Stufen)
+- Objekt-ID (long-int)
 - Paket-Seriennummer (eindeutig je Objekt)
 - Größe der enthaltenen Nutzdaten (roh)
 
@@ -73,17 +77,18 @@ Folgende Signalisierungsobjekte zur Übertragungssteuerung sind definiert:
                   (wird regelmäßig gesendet wenn keine Übertragung stattfindet)
 - TEMPO (Stufe) : Anfrage, das Sendetempo einzurichten (unverbindlich)
 - BREAK (Objekt-ID, Cause) : Übertragung des Objekts wird abgebrochen
+- FAIL : eine kommunikative Operation hatte keinen Erfolg
 - PING (id) : Aktivitätsanfrage (mit Seriennummer)
 - ECHO (id) : Aktivitätsantwort (mit Seriennummer)
 
-== Sortierungsfolge der Sendepakete
+== Sortierungsfolge der Sendepakete (Sendethread)
 
 - Objekt-Priorität, 2-byte int		3-stellige Ziffernfolge
 - T-Objekt-Nummer, 8-byte int		aufsteigende Nummern je Account
 - Paket-Sequenznummer, 4-byte int	aufsteigende Nummern je T-Objekt
 
 Objekt-Priorität:  1. Stelle ungenutzt, Wert = 5
-	   2. Stelle Funktion 3 = Signal, 5 = Daten, 7 = Datei
+	   2. Stelle Funktion 3 = Signal, 5 = Objekt, 7 = Datei
 	   3. Stelle Prioritätskanal 3 = hoch. 5 = normal, 7 = niedrig
 
 
@@ -144,11 +149,13 @@ TEMPO
 3
 = TEMPO Organisation
 
-TEMPO is a Baud value associated as a property of the connection. This limitation is approximately realised in the sending (OUTGOING) direction. We have no limitations on the reception channel.
+TEMPO is a Baud value (bytes per second) associated as a property of the connection. This limitation is approximately realised in the sending (OUTGOING) direction. We have no limitations on the reception channel. 
 
-TEMPO limitation is performed as a thread sleeping phase of the Input-Processor (dealing user-objects for sending) or any of the file-sending processors (SendFileProcessor).
+TEMPO can be set by any side of a connection and sets both sides' sending speed. The setting can be suppressed for the client side if the server has activated a blockage. In this case only the server can set the speed property, an attempt of the client fails undone.
 
-- CODE
+TEMPO limitation is performed as a thread sleeping phase of the Input-Processor (dealing with user-objects) or any of the file-sending processors (SendFileProcessor).
+
+-- CODE
 ConnectionImpl
 private void delay_baud ()		basic function
 protected void queueParcelForSending ()	posting parcels for sending in coreSend
@@ -281,5 +288,32 @@ synchronized (x) {
 == Set TEMPO in Baud
 
 
+
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+Milestones
+2
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+1.0
+3
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+1.1
+3
+<end node> 5P9i0s8y19Z
+dt=Text
+<node>
+Desiderata
+4
+-- length limitation for file-transfers (con-parameters)
+-- do we need CRC calculation for TransmissionParcel ?
+-- ALIVE signal sending only when there is a transmission gap of relevant length
+
+-- max number of connections in server
+-- optional ZIP-ing of byte-arrays in 'sendData()' methods
 
 <end node> 5P9i0s8y19Z
