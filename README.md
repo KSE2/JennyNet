@@ -26,7 +26,23 @@ _JennyNet_ eases the way in which Java objects and files can be transmitted over
 -  Java Virtual Machine (JRE) of version 1.8 or higher.
 -  "all"-package includes external software (Kryo-4.0) for the optional use of Kryo-serialisation.
 
+### Maven Central
+pkg:maven/io.github.kse2/jennynet@1.0.0
+<br>pkg:maven/io.github.kse2/jennynet-all@1.0.0
+
+    <dependency>
+        <groupId>io.github.kse2</groupId>
+        <artifactId>jennynet</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+
+    <dependency>
+        <groupId>io.github.kse2</groupId>
+        <artifactId>jennynet-all</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+
 ## Documentation
-- [[User Manual|https://github.com/KSE2/JennyNet/wiki/User-Manual]]
-- [[Kryo|https://github.com/EsotericSoftware/kryo/wiki/Kryo-v4]] Java object serialisation
+- User Manual: https://github.com/KSE2/JennyNet/wiki/User-Manual
+- Kryo: https://github.com/EsotericSoftware/kryo/wiki/Kryo-v4
 
