@@ -1,0 +1,11 @@
+<dependency>
+    <groupId>io.github.kse2</groupId>
+    <artifactId>jennynet</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<dependency>
+    <groupId>io.github.kse2</groupId>
+    <artifactId>jennynet-all</artifactId>
+    <version>1.0.0</version>
+</dependency>
